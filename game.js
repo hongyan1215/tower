@@ -982,15 +982,17 @@ class Game {
     }
     
     startSpecialEvent(event) {
-        // 開始正常波次
-        this.startNextWave();
-        
         // 設置特殊事件狀態
         this.gameState.specialEvent = event;
         
+        // 開始正常波次
+        this.startNextWave();
+        
         // 在正常敵人基礎上添加特殊敵人到當前波次
-        const specialEnemy = this.createSpecialEnemy(event.enemy);
         this.currentWaveEnemies.push(event.enemy + '_special');
+        
+        // 重新打亂敵人順序，讓特殊敵人隨機出現
+        this.currentWaveEnemies.sort(() => Math.random() - 0.5);
         
         // 顯示事件開始消息
         this.showEventMessage(`${event.name}開始！精英敵人加入本波！`);
