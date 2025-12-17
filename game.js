@@ -386,7 +386,7 @@ class Game {
             heal: {
                 cost: 160, damage: 25, range: 60, fireRate: 6000, color: '#00ff88',
                 type: 'heal', upgradeCost: 240, maxLevel: 3,
-                description: '治療塔，攻擊敵人並獨立治療玩家'
+                description: '增強治療塔，攻擊敵人並提供強力治療'
             }
         };
         
@@ -1405,19 +1405,19 @@ class Tower {
             if (!this.lastHealAttempt) this.lastHealAttempt = 0;
             this.lastHealAttempt += deltaTime;
             
-            // 每4秒嘗試治療一次
-            const healInterval = 4000;
+            // 每3秒嘗試治療一次 - 增強版
+            const healInterval = 3000;
             if (this.lastHealAttempt >= healInterval) {
                 // 檢查全局治療冷卻
                 if (typeof game !== 'undefined') {
                     const currentTime = Date.now();
                     if (currentTime - game.gameState.lastHealTime >= game.gameState.healCooldown) {
-                        // 治療量隨等級遞增
-                        let healAmount = this.level; // 1級=1HP, 2級=2HP, 3級=3HP
+                        // 治療量隨等級遞增 - 增強版
+                        let healAmount = this.level * 2; // 1級=2HP, 2級=4HP, 3級=6HP
                         
-                        // 3級：神聖祝福，25%機率額外恢復2HP並減少下次受傷
+                        // 3級：神聖祝福，25%機率額外恢復4HP並減少下次受傷
                         if (this.level >= 3 && Math.random() < 0.25) {
-                            healAmount += 2;
+                            healAmount += 4;
                             // 給予短暫的傷害減免效果
                             if (!game.gameState.blessedUntil) {
                                 game.gameState.blessedUntil = currentTime + 5000; // 5秒祝福效果
