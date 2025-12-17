@@ -452,9 +452,22 @@ class Game {
     }
     
     upgradeTower(tower) {
-        if (tower.level < tower.maxLevel && this.gameState.money >= tower.upgradeCost) {
-            this.gameState.money -= tower.upgradeCost;
+        let upgradeCost = tower.upgradeCost;
+        
+        // 檢查升級折扣
+        if (this.gameState.upgradeDiscount && Date.now() < this.gameState.discountExpiry) {
+            upgradeCost = Math.floor(upgradeCost * this.gameState.upgradeDiscount);
+        }
+        
+        if (tower.level < tower.maxLevel && this.gameState.money >= upgradeCost) {
+            this.gameState.money -= upgradeCost;
             tower.upgrade();
+            
+            // 如果使用了折扣，清除折扣狀態
+            if (this.gameState.upgradeDiscount && Date.now() < this.gameState.discountExpiry) {
+                this.gameState.upgradeDiscount = null;
+                this.gameState.discountExpiry = null;
+            }
             
             // 更新升級任務進度
             this.updateMissionProgress('upgrade', { towerType: tower.type });
@@ -871,27 +884,23 @@ class Game {
     applySpecialReward(reward) {
         switch(reward) {
             case 'health_boost':
-                this.gameState.health = Math.min(100, this.gameState.health + 20);
+                this.gameState.health = Math.min(100, this.gameState.health + 10); // 從20降到10
                 break;
             case 'damage_boost':
-                // 臨時增加所有塔的傷害（降低強度）
+                // 臨時增加所有塔的傷害（進一步降低強度）
                 this.towers.forEach(tower => {
-                    tower.tempDamageBoost = 1.25; // 從1.5降到1.25
-                    tower.boostDuration = 20000; // 從30秒降到20秒
+                    tower.tempDamageBoost = 1.15; // 從1.25降到1.15
+                    tower.boostDuration = 15000; // 從20秒降到15秒
                 });
                 break;
             case 'upgrade_boost':
-                // 隨機升級1座塔
-                const upgradableTowers = this.towers.filter(tower => tower.level < tower.maxLevel);
-                if (upgradableTowers.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * upgradableTowers.length);
-                    const tower = upgradableTowers[randomIndex];
-                    tower.upgrade();
-                }
+                // 給予升級折扣而不是免費升級
+                this.gameState.upgradeDiscount = 0.5; // 50%升級折扣
+                this.gameState.discountExpiry = Date.now() + 30000; // 30秒內有效
                 break;
             case 'mega_bonus':
-                this.gameState.money += 300; // 從500降到300
-                this.gameState.health = Math.min(100, this.gameState.health + 30); // 不再回滿，只加30
+                this.gameState.money += 200; // 從300降到200
+                this.gameState.health = Math.min(100, this.gameState.health + 20); // 從30降到20
                 break;
         }
     }
@@ -954,19 +963,19 @@ class Game {
                 name: '精英入侵',
                 description: '一隻強大的精英敵人出現！擊敗它可獲得豐厚獎勵。',
                 enemy: 'elite',
-                reward: { money: 150 + this.gameState.wave * 25, special: 'damage_boost' }
+                reward: { money: 80 + this.gameState.wave * 15, special: 'damage_boost' }
             },
             {
                 name: '巨型威脅',
                 description: '巨型敵人來襲！血量極高但獎勵豐厚。',
                 enemy: 'giant',
-                reward: { money: 200 + this.gameState.wave * 35, special: 'upgrade_boost' }
+                reward: { money: 100 + this.gameState.wave * 20, special: 'upgrade_boost' }
             },
             {
                 name: '速度惡魔',
                 description: '超快速敵人出現！難以命中但獎勵不錯。',
                 enemy: 'speedster',
-                reward: { money: 120 + this.gameState.wave * 20, special: 'health_boost' }
+                reward: { money: 60 + this.gameState.wave * 12, special: 'health_boost' }
             }
         ];
         
