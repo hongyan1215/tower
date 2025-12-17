@@ -108,11 +108,22 @@ class Game {
                 break;
         }
         
-        // 確保路徑點都在有效範圍內
-        return path.filter(point => 
+        // 確保路徑點都在有效範圍內，但保持路徑完整性
+        const filteredPath = path.filter(point => 
             point.x >= pathStartX && point.x <= width - margin &&
             point.y >= margin && point.y <= height - margin
         );
+        
+        // 如果過濾後路徑太短，創建一個簡單的直線路徑作為備用
+        if (filteredPath.length < 2) {
+            console.warn('Path filtering resulted in invalid path, creating fallback path');
+            return [
+                { x: pathStartX, y: height / 2 },
+                { x: width - margin, y: height / 2 }
+            ];
+        }
+        
+        return filteredPath;
     }
     
     initializeMissions() {
@@ -2068,10 +2079,21 @@ class Tower {
 
 class Enemy {
     constructor(path, wave, type = 'basic') {
-        this.path = path;
+        // 驗證路徑有效性
+        if (!path || path.length < 2) {
+            console.error('Invalid path provided to enemy constructor');
+            // 創建一個默認路徑
+            this.path = [
+                { x: 370, y: 300 },
+                { x: 800, y: 300 }
+            ];
+        } else {
+            this.path = path;
+        }
+        
         this.pathIndex = 0;
-        this.x = path[0].x;
-        this.y = path[0].y;
+        this.x = this.path[0].x;
+        this.y = this.path[0].y;
         this.type = type;
         this.wave = wave;
         this.reachedEnd = false;
@@ -2201,6 +2223,12 @@ class Enemy {
         this.updateStatusEffects(deltaTime);
         
         const target = this.path[this.pathIndex + 1];
+        if (!target) {
+            console.error('Invalid path target at index', this.pathIndex + 1);
+            this.reachedEnd = true;
+            return;
+        }
+        
         const dx = target.x - this.x;
         const dy = target.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
