@@ -3404,8 +3404,15 @@ class Explosion {
 // 全局遊戲實例
 let game;
 
+// 版本信息
+const GAME_VERSION = '2024.12.17.001';
+console.log('遊戲版本:', GAME_VERSION);
+console.log('包含功能: 火焰塔, 旋風塔, 雷電塔重新設計');
+
 // 啟動遊戲
 window.addEventListener('load', () => {
+    console.log('開始加載遊戲...');
     game = new Game();
+    console.log('遊戲加載完成，版本:', GAME_VERSION);
     // 第一波會通過正常的波次管理邏輯自動開始（15秒後）
 });

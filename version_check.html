@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>版本檢查</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .info { background: #e7f3ff; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>遊戲版本檢查</h1>
+    
+    <div class="info">
+        <h3>當前時間</h3>
+        <p id="currentTime"></p>
+    </div>
+    
+    <div class="info">
+        <h3>瀏覽器信息</h3>
+        <p id="browserInfo"></p>
+    </div>
+    
+    <div class="info">
+        <h3>緩存狀態</h3>
+        <p id="cacheInfo"></p>
+    </div>
+    
+    <div class="info">
+        <h3>新塔功能檢查</h3>
+        <div id="towerCheck"></div>
+    </div>
+    
+    <div class="info">
+        <h3>強制刷新選項</h3>
+        <button onclick="forceRefresh()">強制刷新緩存</button>
+        <button onclick="clearAllCache()">清除所有緩存</button>
+    </div>
+    
+    <script>
+        // 顯示當前時間
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        
+        // 顯示瀏覽器信息
+        document.getElementById('browserInfo').innerHTML = 
+            'User Agent: ' + navigator.userAgent + '<br>' +
+            'Platform: ' + navigator.platform + '<br>' +
+            'Language: ' + navigator.language;
+        
+        // 檢查緩存狀態
+        const gameVersion = localStorage.getItem('gameVersion');
+        document.getElementById('cacheInfo').innerHTML = 
+            'localStorage版本: ' + (gameVersion || '未設置') + '<br>' +
+            'URL參數: ' + window.location.search + '<br>' +
+            'Referrer: ' + document.referrer;
+        
+        // 檢查新塔功能
+        function checkTowers() {
+            const towerCheck = document.getElementById('towerCheck');
+            let html = '';
+            
+            // 檢查HTML按鈕
+            const flameBtn = document.querySelector('[data-tower="flame"]');
+            const tornadoBtn = document.querySelector('[data-tower="tornado"]');
+            
+            html += '<p>火焰塔按鈕: ' + (flameBtn ? '✅ 存在' : '❌ 缺失') + '</p>';
+            html += '<p>旋風塔按鈕: ' + (tornadoBtn ? '✅ 存在' : '❌ 缺失') + '</p>';
+            
+            // 檢查是否能訪問遊戲對象
+            if (typeof game !== 'undefined') {
+                html += '<p>遊戲對象: ✅ 已加載</p>';
+                
+                // 檢查塔定義
+                try {
+                    const towerTypes = {
+                        flame: { cost: 170, type: 'flame' },
+                        tornado: { cost: 190, type: 'tornado' }
+                    };
+                    html += '<p>塔定義: ✅ 正常</p>';
+                } catch (e) {
+                    html += '<p>塔定義: ❌ 錯誤 - ' + e.message + '</p>';
+                }
+            } else {
+                html += '<p>遊戲對象: ❌ 未加載</p>';
+            }
+            
+            towerCheck.innerHTML = html;
+        }
+        
+        // 強制刷新
+        function forceRefresh() {
+            localStorage.setItem('gameVersion', '2024.12.17.001');
+            window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+        }
+        
+        // 清除所有緩存
+        function clearAllCache() {
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // 嘗試清除Service Worker緩存
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            }
+            
+            // 嘗試清除Cache API
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+            
+            alert('緩存已清除，即將重新加載頁面');
+            setTimeout(() => {
+                window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+            }, 1000);
+        }
+        
+        // 延遲檢查塔功能（等待可能的腳本加載）
+        setTimeout(checkTowers, 1000);
+        
+        // 添加測試按鈕
+        const testButtons = document.createElement('div');
+        testButtons.innerHTML = `
+            <h3>測試按鈕</h3>
+            <button data-tower="flame">火焰塔測試</button>
+            <button data-tower="tornado">旋風塔測試</button>
+        `;
+        document.body.appendChild(testButtons);
+    </script>
+</body>
+</html>
