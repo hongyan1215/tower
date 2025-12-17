@@ -671,6 +671,13 @@ class Game {
                 // 死亡粒子效果
                 this.createDeathParticles(enemy.x, enemy.y, enemy.color);
                 
+                // 檢查是否是特殊敵人
+                if (this.gameState.specialEvent && 
+                    (enemy.type === 'elite_special' || enemy.type === 'giant_special' || enemy.type === 'speedster_special')) {
+                    // 特殊敵人被擊殺，檢查事件完成
+                    setTimeout(() => this.checkSpecialEventCompletion(), 100);
+                }
+                
                 // 通知金錢塔獲得擊殺獎勵
                 this.towers.forEach(tower => {
                     if (tower.type === 'money') {
@@ -722,15 +729,15 @@ class Game {
         
 
         
-        // 檢查波次結束或特殊事件完成
+        // 檢查波次結束
         if (this.gameState.waveInProgress) {
-            if (this.gameState.specialEvent && this.enemies.length === 0) {
-                this.checkSpecialEventCompletion();
-            } else if (this.enemiesSpawned >= this.currentWaveEnemies.length) {
+            if (this.enemiesSpawned >= this.currentWaveEnemies.length) {
                 // 所有敵人已生成，立即進入下一波並開始計時
                 this.completeCurrentWave();
             }
         }
+        
+
         
         // 檢查是否所有敵人都被擊殺
         if (this.gameState.allEnemiesSpawned && this.enemies.length === 0 && !this.gameState.waveCompleted) {
@@ -975,17 +982,18 @@ class Game {
     }
     
     startSpecialEvent(event) {
-        this.gameState.waveInProgress = true;
+        // 開始正常波次
+        this.startNextWave();
+        
+        // 設置特殊事件狀態
         this.gameState.specialEvent = event;
         
-        // 生成特殊敵人
+        // 在正常敵人基礎上添加特殊敵人到當前波次
         const specialEnemy = this.createSpecialEnemy(event.enemy);
-        this.enemies.push(specialEnemy);
-        
-        this.updateUI();
+        this.currentWaveEnemies.push(event.enemy + '_special');
         
         // 顯示事件開始消息
-        this.showEventMessage(`${event.name}開始！準備迎戰！`);
+        this.showEventMessage(`${event.name}開始！精英敵人加入本波！`);
     }
     
     createSpecialEnemy(type) {
@@ -1020,23 +1028,29 @@ class Game {
     }
     
     checkSpecialEventCompletion() {
-        if (this.gameState.specialEvent && this.enemies.length === 0) {
-            const event = this.gameState.specialEvent;
+        if (this.gameState.specialEvent) {
+            // 檢查是否還有特殊敵人存活
+            const hasSpecialEnemies = this.enemies.some(enemy => 
+                enemy.type === 'elite_special' || 
+                enemy.type === 'giant_special' || 
+                enemy.type === 'speedster_special'
+            );
             
-            // 給予獎勵
-            this.gameState.money += event.reward.money;
-            this.applySpecialReward(event.reward.special);
-            
-            // 顯示完成消息
-            this.showEventMessage(`${event.name}完成！獲得${event.reward.money}金幣和特殊獎勵！`);
-            
-            // 清除事件狀態
-            this.gameState.specialEvent = null;
-            
-            // 正確進入下一波
-            this.completeCurrentWave();
-            
-            this.updateUI();
+            if (!hasSpecialEnemies) {
+                const event = this.gameState.specialEvent;
+                
+                // 給予獎勵
+                this.gameState.money += event.reward.money;
+                this.applySpecialReward(event.reward.special);
+                
+                // 顯示完成消息
+                this.showEventMessage(`${event.name}完成！獲得${event.reward.money}金幣和特殊獎勵！`);
+                
+                // 清除事件狀態
+                this.gameState.specialEvent = null;
+                
+                this.updateUI();
+            }
         }
     }
     
