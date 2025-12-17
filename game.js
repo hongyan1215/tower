@@ -369,7 +369,7 @@ class Game {
                 description: '毒氣雲攻擊，對範圍內所有敵人造成傷害'
             },
             multishot: {
-                cost: 250, damage: 55, range: 110, fireRate: 800, color: '#ff6600',
+                cost: 250, damage: 60, range: 115, fireRate: 750, color: '#ff6600',
                 type: 'multishot', upgradeCost: 375, maxLevel: 3,
                 description: '多管齊射，同時攻擊多個目標'
             },
@@ -2126,39 +2126,39 @@ class Enemy {
             // 特殊事件敵人
             case 'elite_special':
                 this.speed = (45 + wave * 3) * baseMultiplier;
-                this.maxHealth = Math.floor((400 + wave * 80) * baseMultiplier);
+                this.maxHealth = Math.floor((500 + wave * 100) * baseMultiplier); // +100血量，+20每波
                 this.reward = 0; // 獎勵由事件系統處理
-                this.damage = 20 + Math.floor(wave * 1.2);
+                this.damage = 25 + Math.floor(wave * 1.5); // +5基礎傷害，+0.3每波
                 this.size = 15;
                 this.color = '#ffaa00';
                 this.special = true;
-                this.armor = 0.2;
+                this.armor = 0.25; // 護甲從20%提升到25%
                 this.specialType = 'elite';
                 break;
                 
             case 'giant_special':
                 this.speed = (15 + wave * 1) * baseMultiplier;
-                this.maxHealth = Math.floor((800 + wave * 150) * baseMultiplier);
+                this.maxHealth = Math.floor((1000 + wave * 200) * baseMultiplier); // +200血量，+50每波
                 this.reward = 0;
-                this.damage = 30 + Math.floor(wave * 2);
+                this.damage = 35 + Math.floor(wave * 2.5); // +5基礎傷害，+0.5每波
                 this.size = 25;
                 this.color = '#aa00ff';
                 this.special = true;
-                this.armor = 0.4;
+                this.armor = 0.5; // 護甲從40%提升到50%
                 this.specialType = 'giant';
                 break;
                 
             case 'speedster_special':
-                this.speed = (120 + wave * 8) * baseMultiplier;
-                this.maxHealth = Math.floor((200 + wave * 40) * baseMultiplier);
+                this.speed = (130 + wave * 10) * baseMultiplier; // +10基礎速度，+2每波
+                this.maxHealth = Math.floor((250 + wave * 50) * baseMultiplier); // +50血量，+10每波
                 this.reward = 0;
-                this.damage = 12 + Math.floor(wave * 0.8);
+                this.damage = 15 + Math.floor(wave * 1.0); // +3基礎傷害，+0.2每波
                 this.size = 10;
                 this.color = '#00ffaa';
                 this.special = true;
                 this.specialType = 'speedster';
-                // 速度惡魔有閃避能力
-                this.dodgeChance = 0.25; // 25%閃避機率
+                // 速度惡魔有更強的閃避能力
+                this.dodgeChance = 0.3; // 閃避機率從25%提升到30%
                 break;
         }
         
