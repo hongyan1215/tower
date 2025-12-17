@@ -155,18 +155,20 @@ class Game {
                 name: '專業建造師',
                 description: '建造 {target} 座 {towerType} 塔',
                 type: 'build_specific',
-                towerTypes: ['machinegun', 'sniper', 'cannon', 'freeze', 'chain', 'poison', 'multishot', 'debuff', 'money', 'heal'],
+                towerTypes: ['machinegun', 'sniper', 'cannon', 'freeze', 'chain', 'poison', 'multishot', 'debuff', 'money', 'heal', 'flame', 'tornado'],
                 towerNames: {
                     machinegun: '機槍',
                     sniper: '狙擊',
                     cannon: '加農砲',
                     freeze: '冰凍',
-                    chain: '連鎖',
+                    chain: '雷電',
                     poison: '毒氣',
                     multishot: '多管',
                     debuff: '詛咒',
                     money: '金錢',
-                    heal: '治療'
+                    heal: '治療',
+                    flame: '火焰',
+                    tornado: '旋風'
                 },
                 targets: [2, 3, 5],
                 rewards: {
@@ -370,9 +372,9 @@ class Game {
                 description: '冰凍攻擊，大幅減速敵人'
             },
             chain: {
-                cost: 220, damage: 70, range: 120, fireRate: 900, color: '#9900ff',
+                cost: 220, damage: 70, range: 120, fireRate: 900, color: '#00aaff',
                 type: 'chain', upgradeCost: 330, maxLevel: 3,
-                description: '連鎖閃電，可跳躍攻擊多個敵人'
+                description: '雷電攻擊，可跳躍攻擊多個敵人'
             },
             poison: {
                 cost: 140, damage: 35, range: 100, fireRate: 1100, color: '#99ff00',
@@ -398,6 +400,16 @@ class Game {
                 cost: 160, damage: 50, range: 70, fireRate: 3500, color: '#00ff88',
                 type: 'heal', upgradeCost: 240, maxLevel: 3,
                 description: '增強治療塔，攻擊敵人並提供強力治療'
+            },
+            flame: {
+                cost: 170, damage: 45, range: 95, fireRate: 1300, color: '#ff4400',
+                type: 'flame', upgradeCost: 255, maxLevel: 3,
+                description: '火焰塔，噴射火焰造成持續燃燒傷害'
+            },
+            tornado: {
+                cost: 190, damage: 50, range: 85, fireRate: 1800, color: '#88ff88',
+                type: 'tornado', upgradeCost: 285, maxLevel: 3,
+                description: '旋風塔，在周圍旋轉攻擊所有敵人'
             }
         };
         
@@ -689,6 +701,11 @@ class Game {
                     this.gameOver();
                 }
             } else if (enemy.health <= 0) {
+                // 檢查火焰爆發效果（火焰塔3級）
+                if (enemy.flameExplosion && enemy.flameExplosion.active) {
+                    this.createFlameExplosion(enemy.x, enemy.y, enemy.flameExplosion.damage, enemy.flameExplosion.range);
+                }
+                
                 this.gameState.money += enemy.reward;
                 this.enemies.splice(index, 1);
                 this.updateUI();
@@ -778,6 +795,36 @@ class Game {
         for (let i = 0; i < 20; i++) {
             this.particles.push(new Particle(x, y, color, 1.5));
         }
+    }
+    
+    createFlameExplosion(x, y, damage, range) {
+        // 對範圍內的敵人造成爆炸傷害
+        this.enemies.forEach(enemy => {
+            const dist = Math.sqrt((enemy.x - x) ** 2 + (enemy.y - y) ** 2);
+            if (dist <= range) {
+                enemy.takeDamage(damage, 'flame_explosion', 'flame');
+                // 爆炸也會造成燃燒效果
+                enemy.applyStatusEffect('burn', {
+                    duration: 2000,
+                    damage: Math.floor(damage * 0.2)
+                });
+            }
+        });
+        
+        // 爆炸視覺效果
+        for (let i = 0; i < 30; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * range;
+            const particleX = x + Math.cos(angle) * distance;
+            const particleY = y + Math.sin(angle) * distance;
+            
+            const colors = ['#ff4400', '#ff6600', '#ffaa00', '#ff8800'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            this.particles.push(new Particle(particleX, particleY, color, 2.0));
+        }
+        
+        // 爆炸圓環效果
+        this.explosions.push(new Explosion(x, y, range, '#ff6600'));
     }
     
     completeCurrentWave() {
@@ -1319,9 +1366,9 @@ class Tower {
     }
     
     createPoisonCloud(gameParticles) {
-        // 在塔周圍創建毒氣雲粒子效果
+        // 在塔周圍創建毒氣雲粒子效果（減少數量）
         const cloudRadius = this.range;
-        const particleCount = 20 + this.level * 10;
+        const particleCount = 8 + this.level * 4; // 大幅減少粒子數量
         
         for (let i = 0; i < particleCount; i++) {
             const angle = (i / particleCount) * Math.PI * 2;
@@ -1329,12 +1376,200 @@ class Tower {
             const x = this.x + Math.cos(angle) * radius;
             const y = this.y + Math.sin(angle) * radius;
             
-            gameParticles.push(new Particle(x, y, this.color, 1.5));
+            gameParticles.push(new Particle(x, y, this.color, 0.8)); // 減少持續時間
         }
         
-        // 在塔本身創建更多粒子
-        for (let i = 0; i < 15; i++) {
-            this.particles.push(new Particle(this.x, this.y, this.color, 1.2));
+        // 在塔本身創建更少粒子
+        for (let i = 0; i < 6; i++) { // 從15減少到6
+            this.particles.push(new Particle(this.x, this.y, this.color, 0.6)); // 減少持續時間
+        }
+    }
+    
+    createFlameStream(enemies, gameParticles) {
+        if (!this.target) return;
+        
+        // 計算火焰方向
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const dirX = dx / distance;
+        const dirY = dy / distance;
+        
+        // 火焰流長度
+        const flameLength = Math.min(this.range, distance + 50);
+        const flameWidth = 30 + this.level * 10;
+        
+        // 找到火焰路徑上的所有敵人
+        const hitEnemies = enemies.filter(enemy => {
+            // 計算敵人到火焰線的距離
+            const enemyDx = enemy.x - this.x;
+            const enemyDy = enemy.y - this.y;
+            const enemyDistance = Math.sqrt(enemyDx * enemyDx + enemyDy * enemyDy);
+            
+            if (enemyDistance > flameLength) return false;
+            
+            // 計算點到線的距離
+            const projectionLength = enemyDx * dirX + enemyDy * dirY;
+            if (projectionLength < 0 || projectionLength > flameLength) return false;
+            
+            const projX = this.x + dirX * projectionLength;
+            const projY = this.y + dirY * projectionLength;
+            const distanceToLine = Math.sqrt((enemy.x - projX) ** 2 + (enemy.y - projY) ** 2);
+            
+            return distanceToLine <= flameWidth / 2;
+        });
+        
+        // 對所有命中的敵人造成傷害和燃燒效果
+        hitEnemies.forEach(enemy => {
+            enemy.takeDamage(this.damage, 'flame', 'flame');
+            enemy.applyStatusEffect('burn', {
+                duration: 3000 + this.level * 1000,
+                damage: Math.floor(this.damage * 0.3)
+            });
+            
+            // 3級特效：烈焰爆發 - 燃燒敵人死亡時爆炸
+            if (this.level >= 3) {
+                enemy.flameExplosion = {
+                    active: true,
+                    damage: Math.floor(this.damage * 0.8),
+                    range: 60
+                };
+            }
+        });
+        
+        // 創建火焰流視覺效果
+        const particleCount = Math.floor(flameLength / 8);
+        for (let i = 0; i < particleCount; i++) {
+            const progress = i / particleCount;
+            const x = this.x + dirX * flameLength * progress;
+            const y = this.y + dirY * flameLength * progress;
+            
+            // 火焰寬度隨距離變化
+            const currentWidth = flameWidth * (1 - progress * 0.3);
+            
+            for (let j = 0; j < 3; j++) {
+                const offsetX = (Math.random() - 0.5) * currentWidth;
+                const offsetY = (Math.random() - 0.5) * currentWidth;
+                const particleX = x + offsetX;
+                const particleY = y + offsetY;
+                
+                const colors = ['#ff4400', '#ff6600', '#ffaa00'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                gameParticles.push(new Particle(particleX, particleY, color, 1.0 + Math.random() * 0.5));
+            }
+        }
+        
+        // 塔本身的火焰效果
+        for (let i = 0; i < 8; i++) {
+            this.particles.push(new Particle(this.x, this.y, '#ff6600', 1.2));
+        }
+    }
+    
+    createTornado(enemies, gameParticles) {
+        // 找到範圍內的敵人，限制目標數量
+        const allEnemiesInRange = enemies.filter(enemy => {
+            const dist = Math.sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2);
+            return dist <= this.range;
+        });
+        
+        if (allEnemiesInRange.length === 0) return;
+        
+        // 限制目標數量：2 + 等級個敵人
+        const maxTargets = 2 + this.level;
+        
+        // 按距離排序，優先攻擊最近的敵人
+        allEnemiesInRange.sort((a, b) => {
+            const distA = Math.sqrt((a.x - this.x) ** 2 + (a.y - this.y) ** 2);
+            const distB = Math.sqrt((b.x - this.x) ** 2 + (b.y - this.y) ** 2);
+            return distA - distB;
+        });
+        
+        // 選擇前N個目標
+        const tornadoEnemies = allEnemiesInRange.slice(0, maxTargets);
+        
+        // 對選中的敵人造成傷害和擊退
+        tornadoEnemies.forEach(enemy => {
+            // 造成傷害
+            enemy.takeDamage(this.damage, 'tornado', 'tornado');
+            
+            // 沿路徑擊退效果
+            this.knockbackAlongPath(enemy, 30 + this.level * 15, gameParticles);
+            
+            // 3級特效：風暴標記 - 被標記的敵人受到額外傷害
+            if (this.level >= 3) {
+                enemy.applyStatusEffect('storm_mark', {
+                    duration: 8000,
+                    multiplier: 1.5 // 受到50%額外傷害
+                });
+            }
+        });
+        
+        // 創建旋風視覺效果
+        const spiralCount = 3;
+        const particlesPerSpiral = 15;
+        
+        for (let spiral = 0; spiral < spiralCount; spiral++) {
+            for (let i = 0; i < particlesPerSpiral; i++) {
+                const progress = i / particlesPerSpiral;
+                const angle = (spiral * Math.PI * 2 / spiralCount) + (progress * Math.PI * 4);
+                const radius = this.range * progress;
+                const x = this.x + Math.cos(angle) * radius;
+                const y = this.y + Math.sin(angle) * radius;
+                
+                gameParticles.push(new Particle(x, y, this.color, 1.5));
+            }
+        }
+        
+        // 中心旋風效果
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2;
+            const radius = 15 + Math.random() * 10;
+            const x = this.x + Math.cos(angle) * radius;
+            const y = this.y + Math.sin(angle) * radius;
+            this.particles.push(new Particle(x, y, '#ffffff', 1.0));
+        }
+    }
+    
+    knockbackAlongPath(enemy, knockbackStrength, gameParticles) {
+        if (!enemy.path || enemy.pathIndex <= 0) return;
+        
+        // 計算當前路徑段的方向（從當前點到前一個點，即後退方向）
+        const currentPoint = enemy.path[enemy.pathIndex];
+        const previousPoint = enemy.path[enemy.pathIndex - 1];
+        
+        if (!currentPoint || !previousPoint) return;
+        
+        // 計算後退方向（從當前點指向前一個點）
+        const backwardDx = previousPoint.x - currentPoint.x;
+        const backwardDy = previousPoint.y - currentPoint.y;
+        const backwardDistance = Math.sqrt(backwardDx * backwardDx + backwardDy * backwardDy);
+        
+        if (backwardDistance === 0) return;
+        
+        // 標準化方向向量
+        const dirX = backwardDx / backwardDistance;
+        const dirY = backwardDy / backwardDistance;
+        
+        // 應用擊退
+        const actualKnockback = knockbackStrength * 0.5; // 調整擊退強度
+        enemy.x += dirX * actualKnockback;
+        enemy.y += dirY * actualKnockback;
+        
+        // 檢查是否需要調整pathIndex（如果被擊退到前一個路徑點附近）
+        const distToPrevious = Math.sqrt(
+            (enemy.x - previousPoint.x) ** 2 + (enemy.y - previousPoint.y) ** 2
+        );
+        
+        // 如果敵人被擊退到接近前一個路徑點，調整pathIndex
+        if (distToPrevious < 10 && enemy.pathIndex > 0) {
+            enemy.pathIndex = Math.max(0, enemy.pathIndex - 1);
+        }
+        
+        // 擊退粒子效果
+        for (let i = 0; i < 8; i++) {
+            const particleX = enemy.x + (Math.random() - 0.5) * 20;
+            const particleY = enemy.y + (Math.random() - 0.5) * 20;
+            gameParticles.push(new Particle(particleX, particleY, '#88ff88', 1.0));
         }
     }
     
@@ -1551,7 +1786,7 @@ class Tower {
                 break;
                 
             case 'chain':
-                // 連鎖塔優先攻擊周圍敵人最多的目標
+                // 雷電塔優先攻擊周圍敵人最多的目標
                 let bestTarget = null;
                 let maxNearbyEnemies = 0;
                 
@@ -1568,6 +1803,22 @@ class Tower {
                 });
                 
                 this.target = bestTarget || enemiesInRange[0];
+                break;
+                
+            case 'flame':
+                // 火焰塔優先攻擊血量最高的敵人（燃燒效果對高血量敵人更有效）
+                this.target = enemiesInRange.reduce((prev, current) => 
+                    current.health > prev.health ? current : prev
+                );
+                break;
+                
+            case 'tornado':
+                // 旋風塔攻擊所有範圍內敵人，選擇最近的作為主目標
+                this.target = enemiesInRange.reduce((prev, current) => {
+                    const prevDist = Math.sqrt((prev.x - this.x) ** 2 + (prev.y - this.y) ** 2);
+                    const currentDist = Math.sqrt((current.x - this.x) ** 2 + (current.y - this.y) ** 2);
+                    return currentDist < prevDist ? current : prev;
+                });
                 break;
                 
             default:
@@ -1701,12 +1952,12 @@ class Tower {
                     break;
                     
                 case 'chain':
-                    // 連鎖塔：連鎖閃電
+                    // 雷電塔：雷電跳躍
                     projectileData.chainLightning = true;
                     projectileData.chainRange = 80 + this.level * 20;
                     projectileData.maxChains = 2 + this.level;
                     projectiles.push(new Projectile(this.x, this.y, this.target, projectileData));
-                    // 連鎖塔增強效果：電弧飛散
+                    // 雷電塔增強效果：電弧飛散
                     for (let i = 0; i < 15; i++) {
                         this.particles.push(new Particle(this.x, this.y, this.color, 1.5));
                     }
@@ -1802,6 +2053,16 @@ class Tower {
                     for (let i = 0; i < 6; i++) {
                         this.particles.push(new Particle(this.x, this.y, this.color, 1.0));
                     }
+                    break;
+                    
+                case 'flame':
+                    // 火焰塔：噴射火焰燃燒路徑上的敵人
+                    this.createFlameStream(enemies, gameParticles);
+                    break;
+                    
+                case 'tornado':
+                    // 旋風塔：創建旋風攻擊範圍內所有敵人
+                    this.createTornado(enemies, gameParticles);
                     break;
                     
                 default:
@@ -1926,17 +2187,31 @@ class Tower {
                 break;
                 
             case 'chain':
-                // 連鎖塔 - 八邊形，電弧效果
+                // 雷電塔 - 閃電形狀，電弧效果
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                const chainSides = 8;
-                ctx.moveTo(this.x + size, this.y);
-                for (let i = 1; i <= chainSides; i++) {
-                    const angle = (i * 2 * Math.PI) / chainSides;
-                    ctx.lineTo(this.x + size * Math.cos(angle), this.y + size * Math.sin(angle));
-                }
+                // 繪製閃電形狀的塔
+                ctx.moveTo(this.x - size * 0.3, this.y - size);
+                ctx.lineTo(this.x + size * 0.2, this.y - size * 0.3);
+                ctx.lineTo(this.x - size * 0.1, this.y - size * 0.1);
+                ctx.lineTo(this.x + size * 0.4, this.y + size * 0.2);
+                ctx.lineTo(this.x, this.y + size);
+                ctx.lineTo(this.x - size * 0.2, this.y + size * 0.3);
+                ctx.lineTo(this.x + size * 0.1, this.y + size * 0.1);
+                ctx.lineTo(this.x - size * 0.4, this.y - size * 0.2);
                 ctx.closePath();
                 ctx.fill();
+                
+                // 添加電弧效果（降低頻率和強度）
+                if (Math.random() < 0.05) { // 從30%降到5%
+                    ctx.strokeStyle = '#88ccff'; // 從純白改為淡藍色
+                    ctx.lineWidth = 1; // 從2降到1
+                    ctx.globalAlpha = 0.6; // 添加透明度
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, size * 1.1, 0, Math.PI * 2); // 縮小範圍
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0; // 恢復透明度
+                }
                 break;
                 
             case 'poison':
@@ -2035,6 +2310,56 @@ class Tower {
                 ctx.fillRect(this.x - size * 0.2, this.y - size * 0.6, size * 0.4, size * 1.2);
                 break;
                 
+            case 'flame':
+                // 火焰塔 - 火焰形狀
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                // 繪製火焰形狀
+                ctx.moveTo(this.x, this.y - size);
+                ctx.quadraticCurveTo(this.x + size * 0.5, this.y - size * 0.7, this.x + size * 0.3, this.y - size * 0.3);
+                ctx.quadraticCurveTo(this.x + size * 0.7, this.y - size * 0.1, this.x + size * 0.4, this.y + size * 0.2);
+                ctx.quadraticCurveTo(this.x + size * 0.2, this.y + size * 0.5, this.x, this.y + size * 0.8);
+                ctx.quadraticCurveTo(this.x - size * 0.2, this.y + size * 0.5, this.x - size * 0.4, this.y + size * 0.2);
+                ctx.quadraticCurveTo(this.x - size * 0.7, this.y - size * 0.1, this.x - size * 0.3, this.y - size * 0.3);
+                ctx.quadraticCurveTo(this.x - size * 0.5, this.y - size * 0.7, this.x, this.y - size);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 內部火焰效果
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+                
+            case 'tornado':
+                // 旋風塔 - 螺旋形狀
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 螺旋線條
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 0; i < 3; i++) {
+                    const startAngle = (i * Math.PI * 2) / 3;
+                    for (let j = 0; j < 20; j++) {
+                        const angle = startAngle + (j / 20) * Math.PI * 2;
+                        const radius = (j / 20) * size * 0.8;
+                        const x = this.x + Math.cos(angle) * radius;
+                        const y = this.y + Math.sin(angle) * radius;
+                        if (j === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                }
+                ctx.stroke();
+                break;
+                
             default:
                 // 默認圓形
                 ctx.fillStyle = this.color;
@@ -2100,7 +2425,9 @@ class Enemy {
         this.particles = [];
         this.statusEffects = {
             slow: { active: false, duration: 0, strength: 1 },
-            vulnerability: { active: false, duration: 0, multiplier: 1 }
+            vulnerability: { active: false, duration: 0, multiplier: 1 },
+            burn: { active: false, duration: 0, damage: 0, tickTimer: 0 },
+            storm_mark: { active: false, duration: 0, multiplier: 1 }
         };
         this.pathProgress = 0;
         
@@ -2318,6 +2645,36 @@ class Enemy {
                 this.statusEffects.freeze.active = false;
             }
         }
+        
+        // 燃燒效果（火焰塔）
+        if (this.statusEffects.burn.active) {
+            this.statusEffects.burn.duration -= deltaTime;
+            this.statusEffects.burn.tickTimer += deltaTime;
+            
+            // 每0.5秒造成一次燃燒傷害
+            if (this.statusEffects.burn.tickTimer >= 500) {
+                this.takeDamage(this.statusEffects.burn.damage, 'flame', 'flame');
+                this.statusEffects.burn.tickTimer = 0;
+                
+                // 燃燒傷害粒子效果
+                for (let i = 0; i < 6; i++) {
+                    this.particles.push(new Particle(this.x, this.y, '#ff6600', 1.0));
+                }
+            }
+            
+            if (this.statusEffects.burn.duration <= 0) {
+                this.statusEffects.burn.active = false;
+            }
+        }
+        
+        // 風暴標記效果（旋風塔3級）
+        if (this.statusEffects.storm_mark.active) {
+            this.statusEffects.storm_mark.duration -= deltaTime;
+            if (this.statusEffects.storm_mark.duration <= 0) {
+                this.statusEffects.storm_mark.active = false;
+                this.statusEffects.storm_mark.multiplier = 1;
+            }
+        }
     }
     
     applyStatusEffect(type, data) {
@@ -2332,6 +2689,23 @@ class Enemy {
 
             case 'vulnerability':
                 this.statusEffects.vulnerability = {
+                    active: true,
+                    duration: data.duration,
+                    multiplier: data.multiplier
+                };
+                break;
+                
+            case 'burn':
+                this.statusEffects.burn = {
+                    active: true,
+                    duration: data.duration,
+                    damage: data.damage,
+                    tickTimer: 0
+                };
+                break;
+                
+            case 'storm_mark':
+                this.statusEffects.storm_mark = {
                     active: true,
                     duration: data.duration,
                     multiplier: data.multiplier
@@ -2355,6 +2729,11 @@ class Enemy {
         // 應用易傷效果
         if (this.statusEffects.vulnerability.active) {
             finalDamage *= this.statusEffects.vulnerability.multiplier;
+        }
+        
+        // 應用風暴標記效果
+        if (this.statusEffects.storm_mark.active) {
+            finalDamage *= this.statusEffects.storm_mark.multiplier;
         }
         
         // 應用護甲減免
@@ -2491,6 +2870,60 @@ class Enemy {
             }
         }
         
+        // 燃燒效果視覺
+        if (this.statusEffects.burn.active) {
+            // 火焰光環
+            ctx.strokeStyle = '#ff4400';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 6, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 火焰粒子效果
+            const time = Date.now() * 0.01;
+            for (let i = 0; i < 4; i++) {
+                const angle = time + (i * Math.PI / 2);
+                const radius = this.size + 4 + Math.sin(time * 3) * 2;
+                const flameX = this.x + Math.cos(angle) * radius;
+                const flameY = this.y + Math.sin(angle) * radius;
+                
+                ctx.fillStyle = i % 2 === 0 ? '#ff6600' : '#ffaa00';
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.arc(flameX, flameY, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        // 風暴標記視覺效果
+        if (this.statusEffects.storm_mark.active) {
+            // 風暴光環
+            ctx.strokeStyle = '#88ff88';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 8, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 風暴粒子效果
+            const time = Date.now() * 0.008;
+            for (let i = 0; i < 6; i++) {
+                const angle = time + (i * Math.PI / 3);
+                const radius = this.size + 10 + Math.sin(time * 2) * 4;
+                const stormX = this.x + Math.cos(angle) * radius;
+                const stormY = this.y + Math.sin(angle) * radius;
+                
+                ctx.fillStyle = '#88ff88';
+                ctx.globalAlpha = 0.8;
+                ctx.beginPath();
+                ctx.arc(stormX, stormY, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
         // 繪製血條
         const barWidth = this.size * 2.5;
         const barHeight = 4;
@@ -2613,6 +3046,10 @@ class Projectile {
             });
         }
         
+        // 火焰塔現在直接攻擊，不需要子彈燃燒效果
+        
+        // 旋風塔現在直接攻擊，不需要子彈擊退效果
+        
         if (this.splash) {
             this.handleSplashDamage(enemies, gameParticles);
         }
@@ -2685,7 +3122,7 @@ class Projectile {
             nextTarget.takeDamage(finalDamage, 'normal', this.type);
             hitTargets.add(nextTarget);
             
-            // 創建閃電連鎖視覺效果
+            // 創建雷電跳躍視覺效果
             const steps = Math.floor(closestDistance / 8);
             for (let i = 0; i < steps; i++) {
                 const progress = i / steps;

@@ -53,19 +53,27 @@
         <div>生命值: <span id="health">100</span></div>
         <div>金錢: <span id="money">500</span></div>
         <div>波次: <span id="wave">1</span></div>
+        <!-- 基礎攻擊塔 -->
         <div style="display: flex; flex-wrap: wrap; gap: 2px;">
             <button class="tower-button" data-tower="machinegun">機槍(80)</button>
             <button class="tower-button" data-tower="sniper">狙擊(200)</button>
             <button class="tower-button" data-tower="cannon">加農(180)</button>
-            <button class="tower-button" data-tower="freeze">冰凍(100)</button>
         </div>
+        <!-- 元素攻擊塔 -->
         <div style="display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px;">
-            <button class="tower-button" data-tower="chain">連鎖(220)</button>
+            <button class="tower-button" data-tower="freeze">冰凍(100)</button>
+            <button class="tower-button" data-tower="chain">雷電(220)</button>
+            <button class="tower-button" data-tower="flame">火焰(170)</button>
+        </div>
+        <!-- 範圍攻擊塔 -->
+        <div style="display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px;">
             <button class="tower-button" data-tower="poison">毒氣(140)</button>
             <button class="tower-button" data-tower="multishot">多管(250)</button>
-            <button class="tower-button" data-tower="debuff">詛咒(150)</button>
+            <button class="tower-button" data-tower="tornado">旋風(190)</button>
         </div>
+        <!-- 輔助塔 -->
         <div style="display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px;">
+            <button class="tower-button" data-tower="debuff">詛咒(150)</button>
             <button class="tower-button" data-tower="money">金錢(150)</button>
             <button class="tower-button" data-tower="heal">治療(160)</button>
         </div>
@@ -90,31 +98,33 @@
             <div>• 敵人從右側路徑進攻</div>
             <div>• 在右側區域建造塔防</div>
         </div>
-        <div style="margin-top: 10px; font-size: 11px;">
-            <div>塔類型說明:</div>
-            <div>🔫 機槍塔: 快速連射，低傷害</div>
-            <div>🎯 狙擊塔: 超遠射程，高傷害</div>
-            <div>💥 加農砲: 範圍爆炸傷害</div>
-            <div>❄️ 冰凍塔: 減速敵人</div>
-            <div>⚡ 連鎖塔: 連鎖閃電攻擊</div>
-            <div>☠️ 毒氣塔: 毒氣雲群體攻擊</div>
-            <div>🎆 多管塔: 同時攻擊多個目標</div>
-            <div>🔮 詛咒塔: 增加敵人受到傷害</div>
+        <div style="margin-top: 10px; font-size: 10px;">
+            <div style="color: #aaffaa; font-weight: bold;">📋 基礎攻擊塔:</div>
+            <div>🔫 機槍塔: 快速連射，性價比優秀</div>
+            <div>🎯 狙擊塔: 超遠射程，最高單體DPS</div>
+            <div>💥 加農砲: 範圍爆炸，群體清理專家</div>
+            
+            <div style="color: #ffaaaa; font-weight: bold; margin-top: 3px;">⚡ 元素攻擊塔:</div>
+            <div>❄️ 冰凍塔: 減速控制，15%機率凍結</div>
+            <div>⚡ 雷電塔: 跳躍攻擊，連鎖多目標</div>
+            <div>🔥 火焰塔: 火焰流燃燒，持續傷害</div>
+            
+            <div style="color: #aaaaff; font-weight: bold; margin-top: 3px;">🎯 範圍攻擊塔:</div>
+            <div>☠️ 毒氣塔: 毒氣雲AoE，降護甲</div>
+            <div>🎆 多管塔: 多目標齊射，追蹤彈藥</div>
+            <div>🌪️ 旋風塔: 多目標攻擊(2+等級個)，沿路徑擊退</div>
+            
+            <div style="color: #ffaaff; font-weight: bold; margin-top: 3px;">🛠️ 輔助塔:</div>
+            <div>🔮 詛咒塔: 易傷標記，增幅團隊傷害</div>
             <div>💰 金錢塔: 戰術經濟，擊殺/波次/危機獎勵</div>
-            <div>💚 治療塔: 攻擊敵人並恢復生命(全局冷卻)</div>
+            <div>💚 治療塔: 攻擊治療雙重功能(全局冷卻)</div>
         </div>
         <div style="margin-top: 8px; font-size: 10px; color: #888;">
-            <div style="color: #ffff00; font-weight: bold;">🌟 3級特殊效果:</div>
-            <div>🔫 精準射擊: 25%機率雙倍傷害</div>
-            <div>🎯 致命一擊: 對低血量敵人+80%傷害</div>
-            <div>💥 強化爆炸: 濺射範圍+30%，傷害90%</div>
-            <div>❄️ 深度冰凍: 15%機率完全凍結1秒</div>
-            <div>⚡ 增強連鎖: 連鎖次數+1，範圍+20</div>
-            <div>☠️ 腐蝕毒素: 降護甲20%，持續傷害</div>
-            <div>🎆 追蹤彈藥: 子彈追蹤，傷害+20%</div>
-            <div>🔮 增強詛咒: 易傷效果1.9倍，持續8秒</div>
-            <div>💰 投資回報: 其他塔收益+20%雙倍獎勵</div>
-            <div>💚 神聖祝福: 25%機率+4HP並減傷50%</div>
+            <div style="color: #ffff00; font-weight: bold;">🌟 升級提示:</div>
+            <div>• 所有塔都可升級至3級</div>
+            <div>• 3級時獲得強力特殊效果</div>
+            <div>• 機槍塔可升級至4級</div>
+            <div>• 詳細效果請參考遊戲文檔</div>
         </div>
 
     </div>
