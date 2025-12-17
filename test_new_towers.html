@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>新塔測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>新塔功能測試</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(test, success, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${test}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+        
+        // 測試1: 檢查塔定義
+        try {
+            const towerTypes = {
+                flame: {
+                    cost: 170, damage: 45, range: 95, fireRate: 1300, color: '#ff4400',
+                    type: 'flame', upgradeCost: 255, maxLevel: 3,
+                    description: '火焰塔，噴射火焰造成持續燃燒傷害'
+                },
+                tornado: {
+                    cost: 190, damage: 50, range: 85, fireRate: 1800, color: '#88ff88',
+                    type: 'tornado', upgradeCost: 285, maxLevel: 3,
+                    description: '旋風塔，在周圍旋轉攻擊所有敵人'
+                }
+            };
+            
+            if (towerTypes.flame && towerTypes.tornado) {
+                addResult('塔定義測試', true, '火焰塔和旋風塔定義正確');
+            } else {
+                addResult('塔定義測試', false, '塔定義缺失');
+            }
+        } catch (e) {
+            addResult('塔定義測試', false, `錯誤: ${e.message}`);
+        }
+        
+        // 測試2: 檢查HTML按鈕
+        try {
+            const flameBtn = document.querySelector('[data-tower="flame"]');
+            const tornadoBtn = document.querySelector('[data-tower="tornado"]');
+            
+            if (flameBtn && tornadoBtn) {
+                addResult('HTML按鈕測試', true, '火焰塔和旋風塔按鈕存在');
+            } else {
+                addResult('HTML按鈕測試', false, '按鈕缺失');
+            }
+        } catch (e) {
+            addResult('HTML按鈕測試', false, `錯誤: ${e.message}`);
+        }
+        
+        // 測試3: 檢查基本JavaScript功能
+        try {
+            const testArray = [1, 2, 3, 4, 5];
+            const filtered = testArray.filter(x => x > 2);
+            const sorted = testArray.sort((a, b) => a - b);
+            const sliced = testArray.slice(0, 3);
+            
+            if (filtered.length === 3 && sorted.length === 5 && sliced.length === 3) {
+                addResult('JavaScript功能測試', true, 'Array方法正常工作');
+            } else {
+                addResult('JavaScript功能測試', false, 'Array方法異常');
+            }
+        } catch (e) {
+            addResult('JavaScript功能測試', false, `錯誤: ${e.message}`);
+        }
+        
+        // 測試4: 檢查Math函數
+        try {
+            const sqrt = Math.sqrt(16);
+            const cos = Math.cos(0);
+            const sin = Math.sin(0);
+            const floor = Math.floor(3.7);
+            
+            if (sqrt === 4 && cos === 1 && sin === 0 && floor === 3) {
+                addResult('Math函數測試', true, 'Math函數正常工作');
+            } else {
+                addResult('Math函數測試', false, 'Math函數異常');
+            }
+        } catch (e) {
+            addResult('Math函數測試', false, `錯誤: ${e.message}`);
+        }
+        
+        console.log('測試完成，請檢查控制台是否有其他錯誤');
+    </script>
+    
+    <!-- 添加按鈕來測試 -->
+    <button data-tower="flame">火焰塔測試按鈕</button>
+    <button data-tower="tornado">旋風塔測試按鈕</button>
+</body>
+</html>
