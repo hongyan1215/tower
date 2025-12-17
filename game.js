@@ -384,7 +384,7 @@ class Game {
                 description: '戰術經濟塔，根據戰況提供金錢獎勵'
             },
             heal: {
-                cost: 160, damage: 25, range: 60, fireRate: 6000, color: '#00ff88',
+                cost: 160, damage: 50, range: 70, fireRate: 3500, color: '#00ff88',
                 type: 'heal', upgradeCost: 240, maxLevel: 3,
                 description: '增強治療塔，攻擊敵人並提供強力治療'
             }
