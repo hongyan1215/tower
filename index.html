@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子塔防戰略遊戲</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #333;
+            cursor: crosshair;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #00ff00;
+            font-size: 12px;
+            z-index: 100;
+            max-width: 320px;
+        }
+        
+        .tower-button {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 6px 8px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        
+        .tower-button:hover {
+            background: rgba(0, 255, 0, 0.4);
+        }
+        
+        .tower-button.selected {
+            background: rgba(0, 255, 0, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div>生命值: <span id="health">100</span></div>
+        <div>金錢: <span id="money">500</span></div>
+        <div>波次: <span id="wave">1</span></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 2px;">
+            <button class="tower-button" data-tower="machinegun">機槍(80)</button>
+            <button class="tower-button" data-tower="sniper">狙擊(200)</button>
+            <button class="tower-button" data-tower="cannon">加農(180)</button>
+            <button class="tower-button" data-tower="freeze">冰凍(100)</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px;">
+            <button class="tower-button" data-tower="chain">連鎖(220)</button>
+            <button class="tower-button" data-tower="poison">毒氣(140)</button>
+            <button class="tower-button" data-tower="multishot">多管(250)</button>
+            <button class="tower-button" data-tower="debuff">詛咒(150)</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px;">
+            <button class="tower-button" data-tower="money">金錢(150)</button>
+            <button class="tower-button" data-tower="heal">治療(160)</button>
+        </div>
+        <div style="margin-top: 5px; display: flex; gap: 2px;">
+            <button id="upgradeBtn" class="tower-button" style="background: rgba(255, 255, 0, 0.2); border-color: #ffff00;">升級</button>
+            <button id="sellBtn" class="tower-button" style="background: rgba(255, 0, 0, 0.2); border-color: #ff0000;">出售</button>
+        </div>
+        <div style="margin-top: 5px;">
+            <div style="font-size: 11px;">下一波: <span id="nextWaveInfo">準備中...</span></div>
+            <button id="startWaveBtn" class="tower-button" style="margin-top: 2px;">提前開始 (+50金)</button>
+        </div>
+        <div id="missionPanel" style="margin-top: 8px; padding: 5px; border: 1px solid #00ff00; background: rgba(0, 255, 0, 0.1); font-size: 10px;">
+            <div style="font-weight: bold; color: #ffff00;">當前任務</div>
+            <div id="missionName">無任務</div>
+            <div id="missionDesc">等待新任務...</div>
+            <div id="missionProgress">進度: 0/0</div>
+            <div id="missionReward" style="color: #00ffff;">獎勵: 0金</div>
+        </div>
+        <div style="margin-top: 8px; font-size: 9px; color: #888;">
+            <div>💡 提示：</div>
+            <div>• 右側為遊戲區域</div>
+            <div>• 敵人從右側路徑進攻</div>
+            <div>• 在右側區域建造塔防</div>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px;">
+            <div>塔類型說明:</div>
+            <div>🔫 機槍塔: 快速連射，低傷害</div>
+            <div>🎯 狙擊塔: 超遠射程，高傷害</div>
+            <div>💥 加農砲: 範圍爆炸傷害</div>
+            <div>❄️ 冰凍塔: 減速敵人</div>
+            <div>⚡ 連鎖塔: 連鎖閃電攻擊</div>
+            <div>☠️ 毒氣塔: 毒氣雲群體攻擊</div>
+            <div>🎆 多管塔: 同時攻擊多個目標</div>
+            <div>🔮 詛咒塔: 增加敵人受到傷害</div>
+            <div>💰 金錢塔: 戰術經濟，擊殺/波次/危機獎勵</div>
+            <div>💚 治療塔: 攻擊敵人並恢復生命(全局冷卻)</div>
+        </div>
+        <div style="margin-top: 8px; font-size: 10px; color: #888;">
+            <div style="color: #ffff00; font-weight: bold;">🌟 3級特殊效果:</div>
+            <div>🔫 精準射擊: 25%機率雙倍傷害</div>
+            <div>🎯 致命一擊: 對低血量敵人+80%傷害</div>
+            <div>💥 強化爆炸: 濺射範圍+30%，傷害90%</div>
+            <div>❄️ 深度冰凍: 15%機率完全凍結1秒</div>
+            <div>⚡ 增強連鎖: 連鎖次數+1，範圍+20</div>
+            <div>☠️ 腐蝕毒素: 降護甲20%，持續傷害</div>
+            <div>🎆 追蹤彈藥: 子彈追蹤，傷害+20%</div>
+            <div>🔮 增強詛咒: 易傷效果1.9倍，持續8秒</div>
+            <div>💰 投資回報: 其他塔收益+20%雙倍獎勵</div>
+            <div>💚 神聖祝福: 25%機率+2HP並減傷50%</div>
+        </div>
+
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>
