@@ -1032,8 +1032,9 @@ class Game {
             
             // 清除事件狀態
             this.gameState.specialEvent = null;
-            this.gameState.waveInProgress = false;
-            this.gameState.waveTimer = 0;
+            
+            // 正確進入下一波
+            this.completeCurrentWave();
             
             this.updateUI();
         }
